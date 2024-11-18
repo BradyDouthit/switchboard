@@ -6,104 +6,55 @@ import (
 	"strings"
 )
 
-// Context holds shared state between commands and flags
-type Context struct {
-	Values map[string]interface{}
+type FlagResult struct {
+	Value interface{}
+	Error error
 }
 
-// NewContext creates a new context with initialized values
-func NewContext() *Context {
-	return &Context{
-		Values: make(map[string]interface{}),
-	}
-}
-
-// CLI represents the command line interface
-type CLI struct {
-	commands map[string]*Command
-	context  *Context
-}
-
-// Command represents a CLI command
-type Command struct {
-	Name     string
-	Flags    map[string]*Flag
-	Context  *Context
-	callback func(*Context)
-	flagCbs  []func()
-}
-
-// Flag represents a command flag
 type Flag struct {
 	Name        string
 	Description string
 	Required    bool
-	callback    func(string)
+	processor   func(string, interface{}) FlagResult
 }
 
-// New creates a new CLI instance
+type Command struct {
+	Name  string
+	Flags map[string]*Flag
+	order []string // Maintain flag processing order
+}
+
+type CLI struct {
+	commands map[string]*Command
+}
+
 func New() *CLI {
 	return &CLI{
 		commands: make(map[string]*Command),
-		context:  NewContext(),
 	}
 }
 
-// Command adds a new command to the CLI
-func (c *CLI) Command(name string, handlers ...interface{}) {
+func (c *CLI) Command(name string, fn func(*Command)) {
 	cmd := &Command{
-		Name:    name,
-		Flags:   make(map[string]*Flag),
-		Context: c.context,
-		flagCbs: make([]func(), 0),
+		Name:  name,
+		Flags: make(map[string]*Flag),
+		order: make([]string, 0),
 	}
-
-	switch len(handlers) {
-	case 1:
-		// Simple case: just a function with no configuration
-		if handler, ok := handlers[0].(func()); ok {
-			cmd.callback = func(*Context) {
-				handler()
-			}
-		} else if configFn, ok := handlers[0].(func(*Command)); ok {
-			configFn(cmd)
-			// If no callback was set during configuration, use empty callback
-			if cmd.callback == nil {
-				cmd.callback = func(*Context) {}
-			}
-		} else {
-			panic("Invalid command handler type")
-		}
-	case 2:
-		// Advanced case: configuration function and callback
-		configFn, okConfig := handlers[0].(func(*Command))
-		callbackFn, okCallback := handlers[1].(func(*Context))
-
-		if !okConfig || !okCallback {
-			panic("Invalid command handler types")
-		}
-
-		configFn(cmd)
-		cmd.callback = callbackFn
-	default:
-		panic("Invalid number of handlers")
-	}
-
+	fn(cmd)
 	c.commands[name] = cmd
 }
 
-// Flag adds a new flag to the command
-func (c *Command) Flag(name string, description string, required bool, callback func(string)) {
+func (c *Command) Flag(name string, description string, required bool, processor func(string, interface{}) FlagResult) {
 	flag := &Flag{
 		Name:        name,
 		Description: description,
 		Required:    required,
-		callback:    callback,
+		processor:   processor,
 	}
 	c.Flags[name] = flag
+	c.order = append(c.order, name)
 }
 
-// Run executes the CLI
 func (c *CLI) Run() {
 	args := os.Args[1:]
 	if len(args) == 0 {
@@ -111,28 +62,30 @@ func (c *CLI) Run() {
 	}
 
 	if cmd, ok := c.commands[args[0]]; ok {
-		// Track which required flags have been set
+
+		flagValues := make(map[string]string)
 		requiredFlags := make(map[string]bool)
+
 		for flagName, flag := range cmd.Flags {
 			if flag.Required {
 				requiredFlags[flagName] = false
 			}
 		}
 
-		// Parse remaining args for flags
+		// Parse args
 		for i := 1; i < len(args); i++ {
 			arg := args[i]
 			if strings.HasPrefix(arg, "-") {
 				flagName := strings.TrimPrefix(arg, "-")
 				if flag, exists := cmd.Flags[flagName]; exists {
 					if i+1 < len(args) && !strings.HasPrefix(args[i+1], "-") {
-						flag.callback(args[i+1])
+						flagValues[flagName] = args[i+1]
 						if flag.Required {
 							requiredFlags[flagName] = true
 						}
 						i++
 					} else {
-						flag.callback("")
+						flagValues[flagName] = ""
 						if flag.Required {
 							requiredFlags[flagName] = true
 						}
@@ -141,7 +94,7 @@ func (c *CLI) Run() {
 			}
 		}
 
-		// Check if all required flags were provided
+		// Check required flags
 		missingFlags := []string{}
 		for flagName, provided := range requiredFlags {
 			if !provided {
@@ -154,7 +107,18 @@ func (c *CLI) Run() {
 			return
 		}
 
-		// Execute command callback with context
-		cmd.callback(c.context)
+		// Process flags in order
+		var lastResult interface{}
+		for _, flagName := range cmd.order {
+			flag := cmd.Flags[flagName]
+			if value, exists := flagValues[flagName]; exists {
+				result := flag.processor(value, lastResult)
+				if result.Error != nil {
+					fmt.Printf("Error processing flag %s: %v\n", flagName, result.Error)
+					return
+				}
+				lastResult = result.Value
+			}
+		}
 	}
 }

@@ -9,32 +9,22 @@ import (
 func main() {
 	app := switchboard.New()
 
-	// Simple usage
-	app.Command("hello", func() {
-		fmt.Println("Hello, World!")
+	app.Command("greet", func(c *switchboard.Command) {
+		c.Flag("name", "First name", true,
+			func(value string, _ interface{}) switchboard.FlagResult {
+				return switchboard.FlagResult{
+					Value: value,
+				}
+			})
+
+		c.Flag("L", "Last name", false,
+			func(value string, prevResult interface{}) switchboard.FlagResult {
+				firstName := prevResult.(string)
+				fullName := fmt.Sprintf("%s %s", firstName, value)
+				fmt.Printf("Hello %s\n", fullName)
+				return switchboard.FlagResult{Value: fullName}
+			})
 	})
-
-	// Advanced usage with flags and context
-	app.Command("greet",
-		func(c *switchboard.Command) {
-			c.Flag("N", "name", true, func(value string) {
-				c.Context.Values["firstName"] = value
-			})
-			c.Flag("L", "lastname", false, func(value string) {
-				c.Context.Values["lastName"] = value
-			})
-		},
-		func(ctx *switchboard.Context) {
-			firstName := ctx.Values["firstName"].(string)
-			lastName, hasLast := ctx.Values["lastName"].(string)
-
-			if hasLast {
-				fmt.Printf("Hello %s %s\n", firstName, lastName)
-			} else {
-				fmt.Printf("Hello %s\n", firstName)
-			}
-		},
-	)
 
 	app.Run()
 }
