@@ -1,160 +1,100 @@
 package switchboard
 
 import (
-	"fmt"
+	"os"
 	"strings"
 )
 
-// Flag represents a command-line flag with its properties
-type Flag struct {
-	Short       string
-	Long        string
-	Description string
-	Required    bool
-	Value       *string
-	Callback    func(value string) error
+// Context holds shared state between commands and flags
+type Context struct {
+	Values map[string]interface{}
 }
 
-// Command represents a CLI command with its callback function
-type Command struct {
-	Name        string
-	Description string
-	Callback    func(args []string) error // Simplified main callback
-	flags       map[string]*Flag
+// NewContext creates a new context with initialized values
+func NewContext() *Context {
+	return &Context{
+		Values: make(map[string]interface{}),
+	}
 }
 
-// App represents the main CLI application
-type App struct {
+// CLI represents the command line interface
+type CLI struct {
 	commands map[string]*Command
+	context  *Context
 }
 
-// New creates a new CLI application
-func New() *App {
-	return &App{
+// Command represents a CLI command
+type Command struct {
+	name     string
+	flags    map[string]*Flag
+	callback func(*Context)
+	flagCbs  []func()
+	context  *Context
+}
+
+// Flag represents a command flag
+type Flag struct {
+	name        string
+	description string
+	callback    func(string)
+}
+
+// NewCLI creates a new CLI instance
+func NewCLI() *CLI {
+	return &CLI{
 		commands: make(map[string]*Command),
+		context:  NewContext(),
 	}
 }
 
-// Command adds a new command to the application
-func (a *App) Command(name string, description string, callback func(args []string) error) *Command {
+// Command adds a new command to the CLI
+func (c *CLI) Command(name string, fn func(*Command), callback func(*Context)) {
 	cmd := &Command{
-		Name:        name,
-		Description: description,
-		Callback:    callback,
-
-		flags: make(map[string]*Flag),
+		name:     name,
+		flags:    make(map[string]*Flag),
+		callback: callback,
+		flagCbs:  make([]func(), 0),
+		context:  c.context,
 	}
-	a.commands[name] = cmd
-	return cmd
+	fn(cmd)
+	c.commands[name] = cmd
 }
 
 // Flag adds a new flag to the command
-func (c *Command) Flag(short, long, description string, callback func(value string) error) *Command {
+func (c *Command) Flag(name string, description string, callback func(string)) {
 	flag := &Flag{
-		Short:       short,
-		Long:        long,
-		Description: description,
-		Required:    false,
-		Value:       new(string),
-		Callback:    callback,
+		name:        name,
+		description: description,
+		callback:    callback,
 	}
-
-	if short != "" {
-		c.flags[short] = flag
-	}
-	if long != "" {
-		c.flags[long] = flag
-	}
-
-	return c
+	c.flags[name] = flag
 }
 
-// Run executes the CLI application with the provided arguments
-func (a *App) Run(args []string) error {
-	if len(args) < 2 {
-		return a.showHelp()
+// Run executes the CLI
+func (c *CLI) Run() {
+	args := os.Args[1:]
+	if len(args) == 0 {
+		return
 	}
 
-	command := args[1]
-	cmd, exists := a.commands[command]
-	if !exists {
-		return a.showHelp()
-	}
-
-	// Parse flags and regular arguments
-	parsedArgs, err := parseArgs(args[2:], cmd.flags)
-	if err != nil {
-		return err
-	}
-
-	// Execute flag callbacks
-	for _, flag := range cmd.flags {
-		if flag.Value != nil && flag.Callback != nil {
-			if err := flag.Callback(*flag.Value); err != nil {
-				return err
-			}
-		}
-	}
-
-	// Execute main command callback
-	return cmd.Callback(parsedArgs)
-}
-
-// parseArgs separates flags from regular arguments
-func parseArgs(args []string, flags map[string]*Flag) ([]string, error) {
-	var regularArgs []string
-
-	for i := 0; i < len(args); i++ {
-		arg := args[i]
-
-		// Check if argument is a flag
-		if strings.HasPrefix(arg, "-") {
-			flagName := strings.TrimPrefix(arg, "-")
-			if strings.HasPrefix(flagName, "-") {
-				flagName = strings.TrimPrefix(flagName, "-")
-			}
-
-			flag, exists := flags[flagName]
-			if !exists {
-				return nil, fmt.Errorf("unknown flag: %s", arg)
-			}
-
-			// Check if there's a value following the flag
-			if i+1 >= len(args) || strings.HasPrefix(args[i+1], "-") {
-				*flag.Value = "true" // Flag present without value
-			} else {
-				*flag.Value = args[i+1]
-				i++ // Skip the next argument since it's the flag value
-			}
-			continue
-		}
-
-		regularArgs = append(regularArgs, arg)
-	}
-
-	return regularArgs, nil
-}
-
-// showHelp displays available commands and their flags
-func (a *App) showHelp() error {
-	println("Available commands:")
-	for _, cmd := range a.commands {
-		println(cmd.Name + "\t" + cmd.Description)
-		if len(cmd.flags) > 0 {
-			println("  Flags:")
-			for _, flag := range cmd.flags {
-				shortFlag := ""
-				if flag.Short != "" {
-					shortFlag = "-" + flag.Short + ", "
+	if cmd, ok := c.commands[args[0]]; ok {
+		// Parse remaining args for flags
+		for i := 1; i < len(args); i++ {
+			arg := args[i]
+			if strings.HasPrefix(arg, "-") {
+				flagName := strings.TrimPrefix(arg, "-")
+				if flag, exists := cmd.flags[flagName]; exists {
+					if i+1 < len(args) && !strings.HasPrefix(args[i+1], "-") {
+						flag.callback(args[i+1])
+						i++
+					} else {
+						flag.callback("")
+					}
 				}
-				required := ""
-				if flag.Required {
-					required = " (required)"
-				}
-				println("    " + shortFlag + "--" + flag.Long + "\t" + flag.Description + required)
 			}
 		}
-		println()
+
+		// Execute command callback with context
+		cmd.callback(c.context)
 	}
-	return nil
 }
