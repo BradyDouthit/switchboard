@@ -25,17 +25,17 @@ type CLI struct {
 
 // Command represents a CLI command
 type Command struct {
-	name     string
-	flags    map[string]*Flag
+	Name     string
+	Flags    map[string]*Flag
+	Context  *Context
 	callback func(*Context)
 	flagCbs  []func()
-	context  *Context
 }
 
 // Flag represents a command flag
 type Flag struct {
-	name        string
-	description string
+	Name        string
+	Description string
 	callback    func(string)
 }
 
@@ -50,11 +50,11 @@ func NewCLI() *CLI {
 // Command adds a new command to the CLI
 func (c *CLI) Command(name string, fn func(*Command), callback func(*Context)) {
 	cmd := &Command{
-		name:     name,
-		flags:    make(map[string]*Flag),
+		Name:     name,
+		Flags:    make(map[string]*Flag),
 		callback: callback,
 		flagCbs:  make([]func(), 0),
-		context:  c.context,
+		Context:  c.context,
 	}
 	fn(cmd)
 	c.commands[name] = cmd
@@ -63,11 +63,11 @@ func (c *CLI) Command(name string, fn func(*Command), callback func(*Context)) {
 // Flag adds a new flag to the command
 func (c *Command) Flag(name string, description string, callback func(string)) {
 	flag := &Flag{
-		name:        name,
-		description: description,
+		Name:        name,
+		Description: description,
 		callback:    callback,
 	}
-	c.flags[name] = flag
+	c.Flags[name] = flag
 }
 
 // Run executes the CLI
@@ -83,7 +83,7 @@ func (c *CLI) Run() {
 			arg := args[i]
 			if strings.HasPrefix(arg, "-") {
 				flagName := strings.TrimPrefix(arg, "-")
-				if flag, exists := cmd.flags[flagName]; exists {
+				if flag, exists := cmd.Flags[flagName]; exists {
 					if i+1 < len(args) && !strings.HasPrefix(args[i+1], "-") {
 						flag.callback(args[i+1])
 						i++
