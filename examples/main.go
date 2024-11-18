@@ -10,9 +10,11 @@ func main() {
 	app := switchboard.New()
 
 	app.Command("greet", func(c *switchboard.Command) {
+		// 1. Define any state to be shared for the whole commmand
 		var greeting string
 		var fullName string
 
+		// 2. Define functionality for all needed flags
 		c.Flag("g", "greeting", "Greeting to use", false,
 			func(value string) error {
 				greeting = value
@@ -33,9 +35,13 @@ func main() {
 				if value != "" {
 					fullName += " " + value
 				}
-				fmt.Printf("%s %s\n", greeting, fullName)
 				return nil
 			})
+
+		// 3. Run the full command with the state modified by each flag
+		c.Run(func() {
+			fmt.Printf("%s %s\n", greeting, fullName)
+		})
 	})
 
 	app.Run()
