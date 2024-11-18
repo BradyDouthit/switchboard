@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"os"
 
 	"github.com/BradyDouthit/switchboard"
 )
@@ -10,45 +9,40 @@ import (
 func main() {
 	app := switchboard.New()
 
-	// Variables to store flag values
-	var greeting string = "Hello"
-	var language string = "en"
+	app.Command("greet", func(c *switchboard.Command) {
+		// 1. Define any state to be shared for the whole commmand
+		var greeting string
+		var fullName string
 
-	// Register a command with flags
-	app.Command("greet", "Greets the user with the provided name", func(args []string) error {
-		if len(args) < 1 {
-			return fmt.Errorf("please provide a name")
-		}
-
-		switch language {
-		case "es":
-			greeting = "Hola"
-		case "fr":
-			greeting = "Bonjour"
-		}
-
-		fmt.Printf("%s, %s!\n", greeting, args[0])
-		return nil
-	}).
-		Flag("F", "formal", "Use formal greeting", func(value string) error {
-			if value == "true" {
-				greeting = "Good day"
-			}
-			return nil
-		}).
-		Flag("l", "lang", "Greeting language (en, es, fr)", func(value string) error {
-			switch value {
-			case "en", "es", "fr":
-				language = value
+		// 2. Define functionality for all needed flags
+		c.Flag("g", "greeting", "Greeting to use", false,
+			func(value string) error {
+				greeting = value
+				if greeting == "" {
+					greeting = "Hello"
+				}
 				return nil
-			default:
-				return fmt.Errorf("unsupported language: %s", value)
-			}
-		})
+			})
 
-	// Run the application
-	if err := app.Run(os.Args); err != nil {
-		fmt.Println("Error:", err)
-		os.Exit(1)
-	}
+		c.Flag("n", "name", "First name", true,
+			func(value string) error {
+				fullName = value
+				return nil
+			})
+
+		c.Flag("l", "lastname", "Last name", false,
+			func(value string) error {
+				if value != "" {
+					fullName += " " + value
+				}
+				return nil
+			})
+
+		// 3. Run the full command with the state modified by each flag
+		c.Run(func() {
+			fmt.Printf("%s %s\n", greeting, fullName)
+		})
+	})
+
+	app.Run()
 }
