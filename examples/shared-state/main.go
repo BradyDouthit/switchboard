@@ -9,7 +9,7 @@ import (
 func main() {
 	app := switchboard.New()
 
-	app.Command("greet", func(c *switchboard.Command) {
+	app.Command("greet", "Greet a person with optional customizations", func(c *switchboard.Command) {
 		// 1. Define any state to be shared for the whole commmand
 		var greeting string
 		var fullName string
