@@ -21,7 +21,8 @@ type Command struct {
 	Flags       map[string]*Flag
 	order       []string
 	subCommands map[string]*Command
-	runFn       func()
+	runFn       func([]string)
+	simpleFn    func()
 }
 
 type CLI struct {
@@ -109,6 +110,7 @@ func (c *CLI) Run() {
 func processCommand(cmd *Command, args []string) {
 	flagValues := make(map[string]string)
 	requiredFlags := make(map[string]bool)
+	positionalArgs := []string{}
 
 	shortToLong := make(map[string]string)
 	for longName, flag := range cmd.Flags {
@@ -120,7 +122,8 @@ func processCommand(cmd *Command, args []string) {
 		}
 	}
 
-	for i := 0; i < len(args); i++ {
+	i := 0
+	for i < len(args) {
 		arg := args[i]
 		if strings.HasPrefix(arg, "-") {
 			var flagName string
@@ -147,6 +150,10 @@ func processCommand(cmd *Command, args []string) {
 					i++
 				}
 			}
+			i++
+		} else {
+			positionalArgs = append(positionalArgs, arg)
+			i++
 		}
 	}
 
@@ -173,10 +180,19 @@ func processCommand(cmd *Command, args []string) {
 	}
 
 	if cmd.runFn != nil {
-		cmd.runFn()
+		cmd.runFn(positionalArgs)
+	} else if cmd.simpleFn != nil {
+		cmd.simpleFn()
 	}
 }
 
-func (c *Command) Run(fn func()) {
-	c.runFn = fn
+func (c *Command) Run(fn interface{}) {
+	switch f := fn.(type) {
+	case func():
+		c.simpleFn = f
+	case func([]string):
+		c.runFn = f
+	default:
+		panic("Invalid run function signature")
+	}
 }
