@@ -26,10 +26,10 @@ func main() {
 	app := switchboard.NewCLI()
 
 	app.Command("greet", func(c *switchboard.Command) {
-		c.Flag("N", "name", func(value string) {
+		c.Flag("N", "name", true, func(value string) {
 			c.Context.Values["firstName"] = value
 		})
-		c.Flag("L", "lastname", func(value string) {
+		c.Flag("L", "lastname", false, func(value string) {
 			c.Context.Values["lastName"] = value
 		})
 	}, handleGreet)
