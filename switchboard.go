@@ -12,14 +12,15 @@ type Flag struct {
 	Description string
 	Required    bool
 	Value       *string
+	Callback    func(value string) error
 }
 
 // Command represents a CLI command with its callback function
 type Command struct {
 	Name        string
 	Description string
-	Callback    func(args []string, flags map[string]*Flag) error
-	flags       map[string]*Flag // maps both short and long names to the same flag
+	Callback    func(args []string) error // Simplified main callback
+	flags       map[string]*Flag
 }
 
 // App represents the main CLI application
@@ -35,25 +36,27 @@ func New() *App {
 }
 
 // Command adds a new command to the application
-func (a *App) Command(name string, description string, callback func(args []string, flags map[string]*Flag) error) *Command {
+func (a *App) Command(name string, description string, callback func(args []string) error) *Command {
 	cmd := &Command{
 		Name:        name,
 		Description: description,
 		Callback:    callback,
-		flags:       make(map[string]*Flag),
+
+		flags: make(map[string]*Flag),
 	}
 	a.commands[name] = cmd
 	return cmd
 }
 
 // Flag adds a new flag to the command
-func (c *Command) Flag(short, long, description string, required bool) *Command {
+func (c *Command) Flag(short, long, description string, callback func(value string) error) *Command {
 	flag := &Flag{
 		Short:       short,
 		Long:        long,
 		Description: description,
-		Required:    required,
+		Required:    false,
 		Value:       new(string),
+		Callback:    callback,
 	}
 
 	if short != "" {
@@ -84,14 +87,17 @@ func (a *App) Run(args []string) error {
 		return err
 	}
 
-	// Check for required flags
+	// Execute flag callbacks
 	for _, flag := range cmd.flags {
-		if flag.Required && flag.Value == nil {
-			return fmt.Errorf("required flag missing: --%s", flag.Long)
+		if flag.Value != nil && flag.Callback != nil {
+			if err := flag.Callback(*flag.Value); err != nil {
+				return err
+			}
 		}
 	}
 
-	return cmd.Callback(parsedArgs, cmd.flags)
+	// Execute main command callback
+	return cmd.Callback(parsedArgs)
 }
 
 // parseArgs separates flags from regular arguments
