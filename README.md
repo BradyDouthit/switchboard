@@ -16,20 +16,6 @@ go get github.com/BradyDouthit/switchboard
 ## Usage
 
 ```bash
-$ app hello
-Hello, World!
-
-$ app greet Alice
-Hello, Alice!
-
-$ app greet Alice --uppercase
-Hello, ALICE!
-
-$ app
-Available commands:
-  hello    Says hello
-  greet    Greets someone
-    -u, --uppercase    Convert to uppercase
 ```
 
 ## Features
