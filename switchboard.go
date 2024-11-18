@@ -6,17 +6,12 @@ import (
 	"strings"
 )
 
-type FlagResult struct {
-	Value interface{}
-	Error error
-}
-
 type Flag struct {
 	Short       string
 	Long        string
 	Description string
 	Required    bool
-	processor   func(string, interface{}) FlagResult
+	processor   func(string) error
 }
 
 type Command struct {
@@ -46,7 +41,7 @@ func (c *CLI) Command(name string, fn func(*Command)) {
 	c.commands[name] = cmd
 }
 
-func (c *Command) Flag(short, long, description string, required bool, processor func(string, interface{}) FlagResult) {
+func (c *Command) Flag(short, long, description string, required bool, processor func(string) error) {
 	flag := &Flag{
 		Short:       short,
 		Long:        long,
@@ -128,16 +123,14 @@ func (c *CLI) Run() {
 		}
 
 		// Process flags in order
-		var lastResult interface{}
 		for _, flagName := range cmd.order {
 			flag := cmd.Flags[flagName]
 			if value, exists := flagValues[flagName]; exists {
-				result := flag.processor(value, lastResult)
-				if result.Error != nil {
-					fmt.Printf("Error processing flag %s: %v\n", flagName, result.Error)
+				err := flag.processor(value)
+				if err != nil {
+					fmt.Printf("Error processing flag %s: %v\n", flagName, err)
 					return
 				}
-				lastResult = result.Value
 			}
 		}
 

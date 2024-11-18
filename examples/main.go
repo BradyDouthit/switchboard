@@ -13,33 +13,29 @@ func main() {
 		var greeting string
 		var fullName string
 
-		c.Flag("g", "greeting", "Greeting to use", true,
-			func(value string, _ interface{}) switchboard.FlagResult {
+		c.Flag("g", "greeting", "Greeting to use", false,
+			func(value string) error {
 				greeting = value
 				if greeting == "" {
 					greeting = "Hello"
 				}
-				return switchboard.FlagResult{Value: value}
+				return nil
 			})
 
 		c.Flag("n", "name", "First name", true,
-			func(value string, _ interface{}) switchboard.FlagResult {
+			func(value string) error {
 				fullName = value
-				return switchboard.FlagResult{Value: value}
+				return nil
 			})
 
 		c.Flag("l", "lastname", "Last name", false,
-			func(value string, _ interface{}) switchboard.FlagResult {
-				fmt.Println("Last Name!", value)
+			func(value string) error {
 				if value != "" {
 					fullName += " " + value
 				}
-				return switchboard.FlagResult{Value: fullName}
+				fmt.Printf("%s %s\n", greeting, fullName)
+				return nil
 			})
-
-		c.Run(func() {
-			fmt.Printf("%s %s\n", greeting, fullName)
-		})
 	})
 
 	app.Run()
