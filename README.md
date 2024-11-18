@@ -68,5 +68,44 @@ app.Command("greet", "Greet someone", func(c *switchboard.Command) {
 })
 ```
 
+### Subcommands
+You can create nested command structures using subcommands:
+
+```go
+app.Command("config", "Manage configuration", func(c *switchboard.Command) {
+    c.SubCommand("set", "Set a configuration value", func(sc *switchboard.Command) {
+        var key, value string
+        sc.Flag("k", "key", "Configuration key", true, func(v string) error {
+            key = v
+            return nil
+        })
+        sc.Flag("v", "value", "Configuration value", true, func(v string) error {
+            value = v
+            return nil
+        })
+        sc.Run(func() {
+            fmt.Printf("Setting %s to %s\n", key, value)
+        })
+    })
+    
+    c.SubCommand("get", "Get a configuration value", func(sc *switchboard.Command) {
+        var key string
+        sc.Flag("k", "key", "Configuration key", true, func(v string) error {
+            key = v
+            return nil
+        })
+        sc.Run(func() {
+            fmt.Printf("Getting value for %s\n", key)
+        })
+    })
+})
+```
+
+This creates a command structure that can be used like:
+```bash
+myapp config set --key theme --value dark
+myapp config get --key theme
+```
+
 ### Advanced Usage
 For more advanced usage see `/advanced/main.go`
