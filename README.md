@@ -1,6 +1,6 @@
 # Switchboard
 
-A lightweight, CLI framework for Go that makes building command-line applications simple and intuitive. I was originally inspired by another tool I was working on that quickly got difficult to reason about due to multiple commands and flags. As such, I took inspiration from Express.js for the nice separation of concerns that their API provides.
+A lightweight, CLI framework for Go that makes building command-line applications simple and intuitive. I was originally inspired by another tool I was working on that quickly got difficult to reason about due to multiple commands and flags (skill issue, but I wanted something more readable). As such, I took inspiration from Express.js and the Go http implementation for the nice separation of concerns that their API provides.
 
 ## Features
 - Simple, intuitive API
