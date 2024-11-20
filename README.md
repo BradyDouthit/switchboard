@@ -27,7 +27,7 @@ package main
 
 import (
     "fmt"
-    "github.com/yourusername/switchboard"
+    "github.com/BradyDouthit/switchboard"
 )
 
 func main() {
