@@ -24,12 +24,12 @@ func main() {
 				return nil
 			})
 
-			sc.BoolFlag("d", "debug", "Enable debug mode", func(value bool) error {
+			sc.BoolFlag("d", "debug", "Enable debug mode", true, func(value bool) error {
 				debug = value
 				return nil
 			})
 
-			sc.Flag("c", "config", "Path to config file", false, func(value string) error {
+			sc.Flag("c", "config", "Path to config file", true, func(value string) error {
 				configFile = value
 				return nil
 			})
@@ -61,7 +61,7 @@ func main() {
 				return nil
 			})
 
-			sc.BoolFlag("v", "verbose", "Show detailed status", func(value bool) error {
+			sc.BoolFlag("v", "verbose", "Show detailed status", false, func(value bool) error {
 				verbose = value
 				return nil
 			})
@@ -85,7 +85,7 @@ func main() {
 			var force bool
 			var timeout string
 
-			sc.BoolFlag("f", "force", "Force immediate shutdown", func(value bool) error {
+			sc.BoolFlag("f", "force", "Force immediate shutdown", false, func(value bool) error {
 				force = value
 				return nil
 			})

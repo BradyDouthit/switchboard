@@ -78,7 +78,9 @@ func TestMissingRequiredFlag(t *testing.T) {
 		app.Run()
 	})
 
-	if !strings.Contains(output, "Missing required flags") {
+	baseMessage := "Error: Missing the following required flag(s):\n"
+
+	if !strings.Contains(output, baseMessage) {
 		t.Errorf("Expected missing required flag error, got '%s'", output)
 	}
 }
@@ -88,7 +90,7 @@ func TestBooleanFlag(t *testing.T) {
 		app := New()
 		app.Command("verbose", "Verbose command", func(c *Command) {
 			var verbose bool
-			c.BoolFlag("v", "verbose", "Enable verbose mode", func(value bool) error {
+			c.BoolFlag("v", "verbose", "Enable verbose mode", true, func(value bool) error {
 				verbose = value
 				return nil
 			})
@@ -153,7 +155,7 @@ func TestMixedFlagsAndArgs(t *testing.T) {
 		app := New()
 		app.Command("copy", "Copy command", func(c *Command) {
 			var verbose bool
-			c.BoolFlag("v", "verbose", "Verbose output", func(value bool) error {
+			c.BoolFlag("v", "verbose", "Verbose output", false, func(value bool) error {
 				verbose = value
 				return nil
 			})
@@ -176,7 +178,7 @@ func TestFlagError(t *testing.T) {
 	output := captureOutput(func() {
 		app := New()
 		app.Command("port", "Port command", func(c *Command) {
-			c.Flag("p", "port", "Port number", true, func(value string) error {
+			c.Flag("p", "port", "Port number", false, func(value string) error {
 				return fmt.Errorf("invalid port")
 			})
 			c.Run(func() {

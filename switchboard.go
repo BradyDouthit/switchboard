@@ -15,6 +15,21 @@ type Flag struct {
 	processor   func(string) error
 }
 
+type MissingFlagError struct {
+	Message   string
+	FlagNames []string
+}
+
+func (e *MissingFlagError) Error() string {
+	errMessage := fmt.Sprintf(e.Message)
+
+	for _, flagName := range e.FlagNames {
+		errMessage += fmt.Sprintf("%s\n", flagName)
+	}
+
+	return errMessage
+}
+
 type Command struct {
 	Name        string
 	Description string
@@ -60,12 +75,12 @@ func (c *Command) Flag(short, long, description string, required bool, processor
 	c.order = append(c.order, long)
 }
 
-func (c *Command) BoolFlag(short, long, description string, processor func(bool) error) {
+func (c *Command) BoolFlag(short, long, description string, required bool, processor func(bool) error) {
 	flag := &Flag{
 		Short:       short,
 		Long:        long,
 		Description: description,
-		Required:    false,
+		Required:    required,
 		IsBoolean:   true,
 		processor: func(value string) error {
 			return processor(value != "")
@@ -137,19 +152,20 @@ func processCommand(cmd *Command, args []string) {
 			}
 
 			if flag, exists := cmd.Flags[flagName]; exists {
+
 				if flag.IsBoolean {
 					flagValues[flagName] = "true"
 					if flag.Required {
 						requiredFlags[flagName] = true
 					}
-				} else if i+1 < len(args) && !strings.HasPrefix(args[i+1], "-") {
+				} else if i+1 < len(args) && !strings.HasPrefix(args[i+1], "-") && !strings.HasPrefix(args[i+1], "--") {
 					flagValues[flagName] = args[i+1]
 					if flag.Required {
 						requiredFlags[flagName] = true
 					}
-					i++
 				}
 			}
+
 			i++
 		} else {
 			positionalArgs = append(positionalArgs, arg)
@@ -165,7 +181,12 @@ func processCommand(cmd *Command, args []string) {
 	}
 
 	if len(missingFlags) > 0 {
-		fmt.Printf("Error: Missing required flags: %v\n", missingFlags)
+		err := &MissingFlagError{
+			Message:   "Error: Missing the following required flag(s):\n",
+			FlagNames: missingFlags,
+		}
+
+		fmt.Printf("%v\n", err)
 		return
 	}
 
