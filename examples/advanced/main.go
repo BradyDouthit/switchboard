@@ -24,12 +24,12 @@ func main() {
 				return nil
 			})
 
-			sc.BoolFlag("d", "debug", "Enable debug mode", true, func(value bool) error {
+			sc.BoolFlag("d", "debug", "Enable debug mode", false, func(value bool) error {
 				debug = value
 				return nil
 			})
 
-			sc.Flag("c", "config", "Path to config file", true, func(value string) error {
+			sc.Flag("c", "config", "Path to config file", false, func(value string) error {
 				configFile = value
 				return nil
 			})
