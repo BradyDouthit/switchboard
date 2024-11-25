@@ -2,8 +2,8 @@
 
 A lightweight, CLI framework for Go that makes building command-line applications simple and intuitive. I was originally inspired by another tool I was working on that quickly got difficult to reason about due to multiple commands and flags (skill issue, but I wanted something more readable). As such, I took inspiration from Express.js and the Go http implementation for the nice separation of concerns that their API provides.
 
-[!NOTE]  
-I am fairly new to Go and its ecosystem. Since starting this project I have discovered [Cobra](https://github.com/spf13/cobra) (a real project). If you are building a real CLI my recommendation is that you should use Cobra because it is well supported and feature rich. I will probably keep developing this because it is a fun learning experience.
+> [!NOTE]  
+> I am fairly new to Go and its ecosystem. Since starting this project I have discovered [Cobra](https://github.com/spf13/cobra) (a real project). If you are building a real CLI my recommendation is that you should use Cobra because it is well supported and feature rich. I will probably keep developing this because it is a fun learning experience.
 
 ## Features
 - Simple, intuitive API
