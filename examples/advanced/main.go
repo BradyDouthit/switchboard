@@ -16,7 +16,14 @@ func main() {
 			var debug bool
 			var configFile string
 
-			sc.Flag("p", "port", "Port to listen on", false, func(value string) error {
+			portFlag := switchboard.Flag{
+				Short:       "p",
+				Long:        "port",
+				Description: "Port to listen on",
+				Required:    false,
+			}
+
+			sc.Flag(&portFlag, func(value string) error {
 				port = value
 				if port == "" {
 					port = "8080" // default value
@@ -24,12 +31,26 @@ func main() {
 				return nil
 			})
 
-			sc.BoolFlag("d", "debug", "Enable debug mode", func(value bool) error {
+			debugFlag := switchboard.Flag{
+				Short:       "d",
+				Long:        "debug",
+				Description: "Enable debug mode",
+				Required:    false,
+			}
+
+			sc.BoolFlag(&debugFlag, func(value bool) error {
 				debug = value
 				return nil
 			})
 
-			sc.Flag("c", "config", "Path to config file", false, func(value string) error {
+			configFlag := switchboard.Flag{
+				Short:       "c",
+				Long:        "config",
+				Description: "Path to config file",
+				Required:    false,
+			}
+
+			sc.Flag(&configFlag, func(value string) error {
 				configFile = value
 				return nil
 			})
@@ -50,7 +71,14 @@ func main() {
 			var format string
 			var verbose bool
 
-			sc.Flag("f", "format", "Output format (json|text)", false, func(value string) error {
+			formatFlag := switchboard.Flag{
+				Short:       "f",
+				Long:        "format",
+				Description: "Output format (json|text)",
+				Required:    false,
+			}
+
+			sc.Flag(&formatFlag, func(value string) error {
 				format = value
 				if format == "" {
 					format = "text"
@@ -61,7 +89,14 @@ func main() {
 				return nil
 			})
 
-			sc.BoolFlag("v", "verbose", "Show detailed status", func(value bool) error {
+			verboseFlag := switchboard.Flag{
+				Short:       "v",
+				Long:        "verbose",
+				Description: "Show detailed status",
+				Required:    false,
+			}
+
+			sc.BoolFlag(&verboseFlag, func(value bool) error {
 				verbose = value
 				return nil
 			})
@@ -85,12 +120,26 @@ func main() {
 			var force bool
 			var timeout string
 
-			sc.BoolFlag("f", "force", "Force immediate shutdown", func(value bool) error {
+			forceFlag := switchboard.Flag{
+				Short:       "f",
+				Long:        "force",
+				Description: "Force immediate shutdown",
+				Required:    false,
+			}
+
+			sc.BoolFlag(&forceFlag, func(value bool) error {
 				force = value
 				return nil
 			})
 
-			sc.Flag("t", "timeout", "Shutdown timeout in seconds", false, func(value string) error {
+			timeoutFlag := switchboard.Flag{
+				Short:       "t",
+				Long:        "timeout",
+				Description: "Shutdown timeout in seconds",
+				Required:    false,
+			}
+
+			sc.Flag(&timeoutFlag, func(value string) error {
 				timeout = value
 				if timeout == "" {
 					timeout = "30"

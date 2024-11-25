@@ -12,7 +12,14 @@ func main() {
 	app.Command("copy", "Copy files", func(c *switchboard.Command) {
 		var verbose bool
 
-		c.BoolFlag("v", "verbose", "Show verbose output", func(value bool) error {
+		verboseFlag := switchboard.Flag{
+			Short:       "v",
+			Long:        "verbose",
+			Description: "Show verbose output",
+			Required:    false,
+		}
+
+		c.BoolFlag(&verboseFlag, func(value bool) error {
 			verbose = value
 			return nil
 		})
