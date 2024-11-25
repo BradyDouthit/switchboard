@@ -46,10 +46,19 @@ func TestRequiredFlag(t *testing.T) {
 		app := New()
 		app.Command("greet", "Greet command", func(c *Command) {
 			var name string
-			c.Flag("n", "name", "Name to greet", true, func(value string) error {
+
+			nameFlag := Flag{
+				Short:       "n",
+				Long:        "name",
+				Description: "Name to greet",
+				Required:    true,
+			}
+
+			c.Flag(&nameFlag, func(value string) error {
 				name = value
 				return nil
 			})
+
 			c.Run(func() {
 				fmt.Printf("Hello, %s!", name)
 			})
@@ -67,9 +76,17 @@ func TestMissingRequiredFlag(t *testing.T) {
 	output := captureOutput(func() {
 		app := New()
 		app.Command("greet", "Greet command", func(c *Command) {
-			c.Flag("n", "name", "Name to greet", true, func(value string) error {
+			nameFlag := Flag{
+				Short:       "n",
+				Long:        "name",
+				Description: "Name to greet",
+				Required:    true,
+			}
+
+			c.Flag(&nameFlag, func(value string) error {
 				return nil
 			})
+
 			c.Run(func() {
 				t.Error("Run function should not be called")
 			})
@@ -88,10 +105,19 @@ func TestBooleanFlag(t *testing.T) {
 		app := New()
 		app.Command("verbose", "Verbose command", func(c *Command) {
 			var verbose bool
-			c.BoolFlag("v", "verbose", "Enable verbose mode", func(value bool) error {
+
+			verboseFlag := Flag{
+				Short:       "v",
+				Long:        "verbose",
+				Description: "Enable verbose mode",
+				Required:    false,
+			}
+
+			c.BoolFlag(&verboseFlag, func(value bool) error {
 				verbose = value
 				return nil
 			})
+
 			c.Run(func() {
 				if verbose {
 					fmt.Print("Verbose mode enabled")
@@ -113,10 +139,19 @@ func TestSubCommand(t *testing.T) {
 		app.Command("server", "Server commands", func(c *Command) {
 			c.SubCommand("start", "Start server", func(sc *Command) {
 				var port string
-				sc.Flag("p", "port", "Port number", true, func(value string) error {
+
+				portFlag := Flag{
+					Short:       "p",
+					Long:        "port",
+					Description: "Port number",
+					Required:    false,
+				}
+
+				sc.Flag(&portFlag, func(value string) error {
 					port = value
 					return nil
 				})
+
 				sc.Run(func() {
 					fmt.Printf("Server starting on port %s", port)
 				})
@@ -153,10 +188,19 @@ func TestMixedFlagsAndArgs(t *testing.T) {
 		app := New()
 		app.Command("copy", "Copy command", func(c *Command) {
 			var verbose bool
-			c.BoolFlag("v", "verbose", "Verbose output", func(value bool) error {
+
+			verboseFlag := Flag{
+				Short:       "v",
+				Long:        "verbose",
+				Description: "Verbose output",
+				Required:    false,
+			}
+
+			c.BoolFlag(&verboseFlag, func(value bool) error {
 				verbose = value
 				return nil
 			})
+
 			c.Run(func(args []string) {
 				if verbose {
 					fmt.Printf("Copying %s to %s", args[0], args[1])
@@ -176,9 +220,17 @@ func TestFlagError(t *testing.T) {
 	output := captureOutput(func() {
 		app := New()
 		app.Command("port", "Port command", func(c *Command) {
-			c.Flag("p", "port", "Port number", true, func(value string) error {
+			portFlag := Flag{
+				Short:       "p",
+				Long:        "port",
+				Description: "Port number",
+				Required:    true,
+			}
+
+			c.Flag(&portFlag, func(value string) error {
 				return fmt.Errorf("invalid port")
 			})
+
 			c.Run(func() {
 				t.Error("Run function should not be called")
 			})
@@ -197,10 +249,19 @@ func TestShortFlags(t *testing.T) {
 		app := New()
 		app.Command("greet", "Greet command", func(c *Command) {
 			var name string
-			c.Flag("n", "name", "Name to greet", true, func(value string) error {
+
+			nameFlag := Flag{
+				Short:       "n",
+				Long:        "name",
+				Description: "Name to greet",
+				Required:    true,
+			}
+
+			c.Flag(&nameFlag, func(value string) error {
 				name = value
 				return nil
 			})
+
 			c.Run(func() {
 				fmt.Printf("Hello, %s!", name)
 			})

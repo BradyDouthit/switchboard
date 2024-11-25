@@ -47,32 +47,34 @@ func (c *CLI) Command(name string, description string, fn func(*Command)) {
 	c.commands[name] = cmd
 }
 
-func (c *Command) Flag(short, long, description string, required bool, processor func(string) error) {
+func (c *Command) Flag(f *Flag, cmdFunc func(string) error) {
+	// Adds the processor (a pivate attribute of the Flag struct) to the flag
 	flag := &Flag{
-		Short:       short,
-		Long:        long,
-		Description: description,
-		Required:    required,
+		Short:       f.Short,
+		Long:        f.Long,
+		Description: f.Description,
+		Required:    f.Required,
 		IsBoolean:   false,
-		processor:   processor,
+		processor:   cmdFunc,
 	}
-	c.Flags[long] = flag
-	c.order = append(c.order, long)
+
+	c.Flags[f.Long] = flag
+	c.order = append(c.order, f.Long)
 }
 
-func (c *Command) BoolFlag(short, long, description string, processor func(bool) error) {
+func (c *Command) BoolFlag(f *Flag, processor func(bool) error) {
 	flag := &Flag{
-		Short:       short,
-		Long:        long,
-		Description: description,
-		Required:    false,
+		Short:       f.Short,
+		Long:        f.Long,
+		Description: f.Description,
+		Required:    f.Required,
 		IsBoolean:   true,
 		processor: func(value string) error {
-			return processor(value != "")
+			return processor(value == "true")
 		},
 	}
-	c.Flags[long] = flag
-	c.order = append(c.order, long)
+	c.Flags[f.Long] = flag
+	c.order = append(c.order, f.Long)
 }
 
 func (c *Command) SubCommand(name string, description string, fn func(*Command)) {

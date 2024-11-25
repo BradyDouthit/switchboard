@@ -20,7 +20,14 @@ func main() {
 	app.Command("echo", "Echo a message", func(c *switchboard.Command) {
 		var message string
 
-		c.Flag("m", "message", "Message to echo", true, func(value string) error {
+		flag := switchboard.Flag{
+			Short:       "m",
+			Long:        "message",
+			Description: "Message to echo",
+			Required:    true,
+		}
+
+		c.Flag(&flag, func(value string) error {
 			message = value
 			return nil
 		})

@@ -14,8 +14,15 @@ func main() {
 		var greeting string
 		var fullName string
 
+		greetingFlag := switchboard.Flag{
+			Short:       "g",
+			Long:        "greeting",
+			Description: "Greeting to use",
+			Required:    false,
+		}
+
 		// 2. Define functionality for all needed flags
-		c.Flag("g", "greeting", "Greeting to use", false,
+		c.Flag(&greetingFlag,
 			func(value string) error {
 				greeting = value
 				if greeting == "" {
@@ -24,13 +31,27 @@ func main() {
 				return nil
 			})
 
-		c.Flag("n", "name", "First name", true,
+		nameFlag := switchboard.Flag{
+			Short:       "n",
+			Long:        "name",
+			Description: "First name",
+			Required:    false,
+		}
+
+		c.Flag(&nameFlag,
 			func(value string) error {
 				fullName = value
 				return nil
 			})
 
-		c.Flag("l", "lastname", "Last name", false,
+		lastnameFlag := switchboard.Flag{
+			Short:       "l",
+			Long:        "lastname",
+			Description: "Last name",
+			Required:    false,
+		}
+
+		c.Flag(&lastnameFlag,
 			func(value string) error {
 				if value != "" {
 					fullName += " " + value
